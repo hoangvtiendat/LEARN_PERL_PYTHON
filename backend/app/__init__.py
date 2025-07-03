@@ -22,9 +22,10 @@ def create_app(config_class=Config):
 
     # ... (phần import và đăng ký blueprint giữ nguyên)
     from .api.auth_routes import auth_bp
-
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
+    from .api.ai_routes import ai_bp
+    app.register_blueprint(ai_bp, url_prefix='/api/ai')
     return app
 
 from . import models

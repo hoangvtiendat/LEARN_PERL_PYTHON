@@ -27,3 +27,5 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEBUG = False
     FRONTEND_URL = os.environ.get('FRONTEND_URL') or 'http://localhost:5000'
+    
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
