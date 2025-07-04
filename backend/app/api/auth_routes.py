@@ -9,6 +9,7 @@ from itsdangerous import URLSafeTimedSerializer
 from flask import current_app # Thêm current_app
 from .. import mail # Import mail từ __init__
 from datetime import timedelta
+import re
 
 # DÒNG QUAN TRỌNG: Tạo ra một đối tượng Blueprint tên là 'auth_bp'
 auth_bp = Blueprint('auth_bp', __name__)
@@ -32,6 +33,15 @@ def register():
     )
     user.set_password(data['password'])
     
+    # Validate email format
+    email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    if not re.match(email_regex, data['email']):
+        return jsonify({'error': 'Email không hợp lệ'}), 400
+
+    # Validate password (at least 8 chars, 1 letter, 1 number)
+    password = data['password']
+    if len(password) < 6 or not re.search(r'[A-Za-z]', password) or not re.search(r'\d', password):
+        return jsonify({'error': 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số'}), 400
     db.session.add(user)
     db.session.commit()
 
