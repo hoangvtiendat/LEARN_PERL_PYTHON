@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity,get_jwt
 from ..models.user import User
+from ..models.token_blocklist import TokenBlocklist
 from .. import db
 import pyotp
 from flask import url_for, render_template # Thêm render_template
@@ -10,6 +11,7 @@ from flask import current_app # Thêm current_app
 from .. import mail # Import mail từ __init__
 from datetime import timedelta
 import re
+from sqlalchemy.exc import IntegrityError
 
 # DÒNG QUAN TRỌNG: Tạo ra một đối tượng Blueprint tên là 'auth_bp'
 auth_bp = Blueprint('auth_bp', __name__)
@@ -26,12 +28,18 @@ def register():
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email này đã được sử dụng'}), 409
 
+    if User.query.filter_by(email=data['student_code']).first():
+        return jsonify({'error': 'Mã số sinh viên này đã được sử dụng'}), 409
+    
     # Tạo user mới
     user = User(
         email=data['email'],
-        full_name=data.get('full_name', '')
+        full_name=data.get('full_name', ''),
+        student_code=data.get('student_code', None),  
     )
     user.set_password(data['password'])
+    
+    
     
     # Validate email format
     email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
@@ -42,6 +50,10 @@ def register():
     password = data['password']
     if len(password) < 6 or not re.search(r'[A-Za-z]', password) or not re.search(r'\d', password):
         return jsonify({'error': 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số'}), 400
+    
+    if len(data['student_code']) < 6:
+        return jsonify({'error': 'Mã số sinh viên phải có ít nhất 6 ký tự'}), 400
+    
     db.session.add(user)
     db.session.commit()
 
@@ -94,7 +106,8 @@ def login():
     else:
         # Nếu 2FA không bật, đăng nhập như bình thường
         access_token = create_access_token(identity=user.id)
-        return jsonify(access_token=access_token)
+        refresh_token = create_refresh_token(identity=user.id)
+        return jsonify(access_token=access_token, refresh_token=refresh_token)
 
 @auth_bp.route('/verify-2fa', methods=['POST'])
 @jwt_required() # Yêu cầu token (tạm thời) để truy cập
@@ -115,7 +128,8 @@ def verify_2fa():
     if totp.verify(otp_from_user, valid_window=2):
         # Nếu OTP đúng, cấp access token chính thức
         access_token = create_access_token(identity=user.id)
-        return jsonify(access_token=access_token)
+        refresh_token = create_refresh_token(identity=user.id)
+        return jsonify(access_token=access_token, refresh_token=refresh_token), 200
     else:
         return jsonify({'error': 'Mã OTP không hợp lệ'}), 401
     
@@ -235,3 +249,27 @@ def toggle_2fa():
         return jsonify({"message": "Xác thực hai lớp đã được tắt."}), 200
 
 
+# Sửa lại hoàn toàn hàm refresh
+@auth_bp.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    current_user_id = get_jwt_identity()
+
+    # Lấy jti (id duy nhất) của refresh token cũ và thêm vào blocklist
+    jti = get_jwt()["jti"]
+    db.session.add(TokenBlocklist(jti=jti))
+    db.session.commit()
+
+    # Tạo ra access token và refresh token MỚI
+    new_access_token = create_access_token(identity=current_user_id)
+    new_refresh_token = create_refresh_token(identity=current_user_id)
+
+    return jsonify(access_token=new_access_token, refresh_token=new_refresh_token)
+
+@auth_bp.route('/logout', methods=['POST'])
+@jwt_required(refresh=True) # Yêu cầu refresh token để đăng xuất
+def logout():
+    jti = get_jwt()["jti"]
+    db.session.add(TokenBlocklist(jti=jti))
+    db.session.commit()
+    return jsonify(message="Đăng xuất thành công. Refresh token đã được thu hồi.")

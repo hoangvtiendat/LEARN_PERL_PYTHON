@@ -1,5 +1,5 @@
 from app import create_app, db
-from app.models import user, course, submission
+from app.models import user, course, submission, token_blocklist
 
 # Gọi hàm create_app() để tạo ra instance của ứng dụng
 app = create_app()

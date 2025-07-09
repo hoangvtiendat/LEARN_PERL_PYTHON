@@ -10,6 +10,12 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager() 
 mail = Mail()
+@jwt.token_in_blocklist_loader
+def check_if_token_in_blocklist(jwt_header, jwt_payload):
+    from .models.token_blocklist import TokenBlocklist
+    jti = jwt_payload["jti"]
+    token = TokenBlocklist.query.filter_by(jti=jti).first()
+    return token is not None # Trả về True nếu token tồn tại trong blocklist
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -26,7 +32,17 @@ def create_app(config_class=Config):
 
     from .api.ai_routes import ai_bp
     app.register_blueprint(ai_bp, url_prefix='/api/ai')
+    
+    from .api.course_routes import course_bp
+    app.register_blueprint(course_bp, url_prefix='/api/courses')
+    
+    from .api.exercise_routes import exercise_bp
+    app.register_blueprint(exercise_bp, url_prefix='/api') 
+    
+    
+    
     return app
+
 
 from . import models
 
