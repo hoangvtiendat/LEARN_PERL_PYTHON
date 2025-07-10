@@ -27,6 +27,9 @@ def create_app(config_class=Config):
     mail.init_app(app)
 
     # ... (phần import và đăng ký blueprint giữ nguyên)
+    from .api.user_routes import user_bp
+    app.register_blueprint(user_bp, url_prefix='/api/user')
+    
     from .api.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
@@ -37,7 +40,7 @@ def create_app(config_class=Config):
     app.register_blueprint(course_bp, url_prefix='/api/courses')
     
     from .api.exercise_routes import exercise_bp
-    app.register_blueprint(exercise_bp, url_prefix='/api') 
+    app.register_blueprint(exercise_bp, url_prefix='/api/exercise')
     
     
     
