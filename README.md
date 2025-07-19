@@ -21,7 +21,7 @@
     FLASK_DEBUG=1
 
     # Database URL
-    DATABASE_URL=mysql+pymysql://root:tiendat2004@127.0.0.1:3306/LEARN_PERL_PYTHON
+    DATABASE_URL=mysql+pymysql://root:123456@127.0.0.1:3306/LEARN_PERL_PYTHON
 
     # (Tùy chọn) Thêm các API key cho tính năng AI sau này
     # Ví dụ cho OpenAI
@@ -31,8 +31,8 @@
     MAIL_SERVER=smtp.googlemail.com
     MAIL_PORT=587
     MAIL_USE_TLS=True
-    MAIL_USERNAME=hngvtdat010@gmail.com
-    MAIL_PASSWORD=
+    MAIL_USERNAME=nguyentrananhtu106@gmail.com
+    MAIL_PASSWORD=ugdg rpoh apdr jtre
 
     
     FRONTEND_URL=http://localhost:8080

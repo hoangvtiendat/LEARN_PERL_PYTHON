@@ -195,6 +195,11 @@ def submit_exercise(exercise_id):
         submission.feedback = feedback
         submission.status = 'GRADED'
         db.session.commit()
+        # Ghi log nộp bài
+        from ..models.user import UserLog
+        log = UserLog(user_id=user.id, action='submit', detail=f'Nộp bài {exercise.id}')
+        db.session.add(log)
+        db.session.commit()
         return jsonify({
             'message': 'Nộp bài và chấm điểm tự động thành công',
             'submission_id': submission.id,
@@ -202,6 +207,12 @@ def submit_exercise(exercise_id):
             'feedback': feedback
         }), 200
 
+    db.session.commit()
+    # Ghi log nộp bài
+    from ..models.user import UserLog
+    log = UserLog(user_id=user.id, action='submit', detail=f'Nộp bài {exercise.id}')
+    db.session.add(log)
+    db.session.commit()
     return jsonify({'message': 'Nộp bài thành công', 'submission_id': submission.id}), 200
 
 @exercise_bp.route('/lessons/<int:lesson_id>/exercises', methods=['GET'])

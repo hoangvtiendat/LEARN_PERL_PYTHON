@@ -13,6 +13,7 @@ from datetime import timedelta
 import re
 from sqlalchemy.exc import IntegrityError
 
+
 # DÒNG QUAN TRỌNG: Tạo ra một đối tượng Blueprint tên là 'auth_bp'
 auth_bp = Blueprint('auth_bp', __name__)
 
@@ -70,10 +71,11 @@ def login():
     # Kiểm tra user và mật khẩu
     if user is None or not user.check_password(data['password']):
         return jsonify({'error': 'Email hoặc mật khẩu không chính xác'}), 401
-
-    
-    # access_token = create_access_token(identity=user.id)
-    # return jsonify(access_token=access_token)
+    # Ghi log đăng nhập thành công
+    from ..models.user import UserLog
+    log = UserLog(user_id=user.id, action='login', detail='Đăng nhập thành công')
+    db.session.add(log)
+    db.session.commit()
     
     if user.two_fa_enabled:
         # Nếu 2FA được bật, gửi OTP qua email
