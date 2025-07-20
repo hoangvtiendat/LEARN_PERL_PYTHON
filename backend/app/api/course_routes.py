@@ -372,3 +372,36 @@ def delete_lesson(lesson_id):
     db.session.commit()
 
     return jsonify({"message": "Bài giảng đã được xóa thành công"})
+
+@course_bp.route('/<int:course_id>/lessons', methods=['GET'])
+@teacher_required
+def get_lessons_for_course(course_id):
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({'error': 'Không tìm thấy khóa học'}), 404
+    lessons = Lesson.query.filter_by(course_id=course_id).all()
+    data = []
+    for lesson in lessons:
+        data.append({
+            'id': lesson.id,
+            'title': lesson.title,
+            'content': lesson.content
+        })
+    return jsonify({'lessons': data}), 200
+
+@course_bp.route('/lessons/<int:lesson_id>', methods=['GET'])
+@jwt_required()
+def get_lesson_by_id(lesson_id):    
+    lesson = Lesson.query.get(lesson_id)
+    if not lesson:
+        return jsonify({'error': 'Không tìm thấy bài giảng'}), 404
+    
+    data = {
+        'id': lesson.id,
+        'title': lesson.title,
+        'content': lesson.content,
+        'attachment_url': lesson.attachment_url,
+        'order': lesson.order
+    }
+    
+    return jsonify(data), 200

@@ -36,3 +36,8 @@ class Config:
     FRONTEND_URL = os.environ.get('FRONTEND_URL') or 'http://localhost:5000'
     
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    
+    DB_NAME = os.environ.get('DB_NAME')
+    DB_USER = os.environ.get('DB_USER')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD')
+    MYSQLDUMP_PATH = os.environ.get('MYSQLDUMP_PATH')

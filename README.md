@@ -4,7 +4,7 @@
 1. how to automation generate database:
     - Create database in mysql 
     - in terminal of backend folder, execute the folllowing commands:
-        rm -rf migration
+        rm -rf migrations
         flask db init
         flask db migrate -m "<name commit>"
         flask db upgrade

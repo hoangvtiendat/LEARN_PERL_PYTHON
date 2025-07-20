@@ -1,4 +1,4 @@
-alembic==1.16.2
+alembic==1.16.4
 annotated-types==0.7.0
 appnope==0.1.4
 asttokens==3.0.0
@@ -82,7 +82,7 @@ pyzmq==26.4.0
 requests==2.32.4
 rsa==4.9.1
 six==1.17.0
-SQLAlchemy==2.0.38
+SQLAlchemy==2.0.41
 stack-data==0.6.3
 tomli==2.2.1
 tornado==6.5

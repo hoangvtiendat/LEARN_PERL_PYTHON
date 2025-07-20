@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 # DÒNG QUAN TRỌNG: Tạo ra một đối tượng Blueprint tên là 'auth_bp'
 auth_bp = Blueprint('auth_bp', __name__)
 
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -72,8 +73,12 @@ def login():
         return jsonify({'error': 'Email hoặc mật khẩu không chính xác'}), 401
 
     
-    # access_token = create_access_token(identity=user.id)
-    # return jsonify(access_token=access_token)
+  
+    # Ghi log có đăng nhập
+    from ..models.user import UserLog
+    log = UserLog(user_id=user.id, action='login', detail='Đăng nhập thành công',)
+    db.session.add(log)
+    db.session.commit()
     
     if user.two_fa_enabled:
         # Nếu 2FA được bật, gửi OTP qua email

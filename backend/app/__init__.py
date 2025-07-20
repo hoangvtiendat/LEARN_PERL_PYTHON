@@ -42,6 +42,9 @@ def create_app(config_class=Config):
     from .api.exercise_routes import exercise_bp
     app.register_blueprint(exercise_bp, url_prefix='/api/exercise')
     
+    from .api.ide_routes import ide_bp
+    app.register_blueprint(ide_bp, url_prefix='/api/ide')
+    
     
     
     return app
