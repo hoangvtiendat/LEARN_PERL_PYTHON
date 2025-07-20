@@ -71,11 +71,10 @@ def login():
     # Kiểm tra user và mật khẩu
     if user is None or not user.check_password(data['password']):
         return jsonify({'error': 'Email hoặc mật khẩu không chính xác'}), 401
-    # Ghi log đăng nhập thành công
-    from ..models.user import UserLog
-    log = UserLog(user_id=user.id, action='login', detail='Đăng nhập thành công')
-    db.session.add(log)
-    db.session.commit()
+    
+    # Ghi log đăng nhập thành công với thông tin đầy đủ
+    from ..api.user_routes import log_user_activity
+    log_user_activity(user.id, 'login', 'Đăng nhập thành công', request)
     
     if user.two_fa_enabled:
         # Nếu 2FA được bật, gửi OTP qua email

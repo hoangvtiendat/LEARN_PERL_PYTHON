@@ -54,7 +54,20 @@ class User(db.Model):
 
 class UserLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer)
-    action = db.Column(db.String(50))
-    detail = db.Column(db.String(255))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    username = db.Column(db.String(120), nullable=True)  # Tên đăng nhập
+    email = db.Column(db.String(120), nullable=True)     # Email người dùng
+    full_name = db.Column(db.String(120), nullable=True) # Họ tên đầy đủ
+    role = db.Column(db.String(20), nullable=True)       # Vai trò (student/teacher/admin)
+    status = db.Column(db.String(20), nullable=True)     # Trạng thái (active/inactive)
+    action = db.Column(db.String(50), nullable=False)    # Hành động (login, logout, update, etc.)
+    detail = db.Column(db.String(255), nullable=True)    # Chi tiết hành động
+    ip_address = db.Column(db.String(45), nullable=True) # Địa chỉ IP
+    user_agent = db.Column(db.String(500), nullable=True) # User agent của browser
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Quan hệ với User
+    user = db.relationship('User', backref='logs', lazy='joined')
+
+    def __repr__(self):
+        return f'<UserLog {self.action} by {self.username} at {self.timestamp}>'
