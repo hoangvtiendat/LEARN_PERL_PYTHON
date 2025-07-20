@@ -45,7 +45,14 @@ def create_app(config_class=Config):
     from .api.ide_routes import ide_bp
     app.register_blueprint(ide_bp, url_prefix='/api/ide')
     
+    from .api.report_routes import report_bp
+    app.register_blueprint(report_bp, url_prefix='/api/report')
     
+    from .api.search_routes import search_bp
+    app.register_blueprint(search_bp, url_prefix='/api/search')
+
+    from .api.notification_routes import notification_bp
+    app.register_blueprint(notification_bp, url_prefix='/api')
     
     return app
 

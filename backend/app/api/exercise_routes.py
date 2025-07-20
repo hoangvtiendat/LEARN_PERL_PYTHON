@@ -47,6 +47,17 @@ def create_exercise(lesson_id):
         exercise.deadline = datetime.strptime(deadline, '%Y-%m-%d %H:%M:%S')
     db.session.add(exercise)
     db.session.commit()
+    
+    
+    # Gửi thông báo cho sinh viên đã ghi danh vào khóa học
+    from ..models.notification import Notification
+    for student in course.enrolled_students:
+        notif = Notification(
+            user_id=student.id,
+            message=f'Bạn có bài tập mới: {exercise.title}'
+        )
+        db.session.add(notif)
+    db.session.commit()
     return jsonify({'message': 'Tạo bài tập thành công', 'exercise_id': exercise.id}), 201
 
 @exercise_bp.route('/exercises/<int:exercise_id>', methods=['PUT'])
