@@ -21,8 +21,15 @@ def upgrade():
     op.create_table('user_log',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('username', sa.String(length=120), nullable=True),
+    sa.Column('email', sa.String(length=120), nullable=True),
+    sa.Column('full_name', sa.String(length=120), nullable=True),
+    sa.Column('role', sa.String(length=20), nullable=True),
+    sa.Column('status', sa.String(length=20), nullable=True),
     sa.Column('action', sa.String(length=50), nullable=True),
     sa.Column('detail', sa.String(length=255), nullable=True),
+    sa.Column('ip_address', sa.String(length=45), nullable=True),
+    sa.Column('user_agent', sa.String(length=500), nullable=True),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )

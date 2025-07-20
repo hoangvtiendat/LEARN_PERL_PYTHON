@@ -348,21 +348,18 @@ def export_logs():
     """Xuất logs ra file CSV"""
     from ..models.user import UserLog
     import csv
-    from io import StringIO
+    from io import StringIO, BytesIO
     from flask import send_file
-    
+    from datetime import datetime
+
     # Lấy tất cả logs
     logs = UserLog.query.order_by(UserLog.timestamp.desc()).all()
-    
-    # Tạo file CSV
+
+    # Ghi CSV vào StringIO (text)
     si = StringIO()
     cw = csv.writer(si)
-    
-    # Header
     cw.writerow(['ID', 'Username', 'Email', 'Họ tên', 'Vai trò', 'Trạng thái', 
                  'Hành động', 'Chi tiết', 'IP Address', 'User Agent', 'Thời gian'])
-    
-    # Data
     for log in logs:
         cw.writerow([
             log.id,
@@ -377,16 +374,19 @@ def export_logs():
             log.user_agent,
             log.timestamp.isoformat() if log.timestamp else ''
         ])
-    
-    output = si.getvalue()
+    # Encode sang bytes
+    mem = BytesIO()
+    mem.write(si.getvalue().encode('utf-8'))
+    mem.seek(0)
     si.close()
-    
+
     return send_file(
-        StringIO(output),
+        mem,
         mimetype='text/csv',
         as_attachment=True,
         download_name=f'user_logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
     )
+
 
 # Hàm tiện ích để ghi log với thông tin đầy đủ
 def log_user_activity(user_id, action, detail, request_obj=None):
