@@ -130,25 +130,147 @@ def grade_submission(submission_id):
     submission.feedback = feedback
     submission.status = 'GRADED'
     db.session.commit()
-    return jsonify({'message': 'Chấm điểm thành công'}), 200
+    return jsonify({'message': 'Chấm điểm thành công'}), 200\
 
+# ==================== FC07: QUẢN LÝ BÀI NỘP ====================
+@exercise_bp.route('/exercises/<int:exercise_id>/submissions', methods=['GET'])
+@jwt_required()
+def get_submissions_for_exercise(exercise_id):
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    exercise = Exercise.query.get(exercise_id)
 
+    if not user or not exercise:
+        return jsonify({'error': 'Người dùng hoặc bài tập không tồn tại'}), 404
+
+    lesson = Lesson.query.get(exercise.lesson_id)
+    course = Course.query.get(lesson.course_id)
+
+    # Chỉ giảng viên tạo khóa học được xem
+    if user.role != UserRole.TEACHER:
+        return jsonify({'error': 'Chỉ giảng viên khóa học mới được xem bài nộp'}), 403
+
+    submissions = Submission.query.filter_by(exercise_id=exercise_id).all()
+
+    submissions_data = [{
+        'id': sub.id,
+        'student_id': sub.student_id,
+        'student_name': sub.student.full_name if sub.student else "Ẩn danh",
+        'content': sub.content,
+        'score': sub.score,
+        'feedback': sub.feedback,
+        'status': sub.status.name,
+        'submitted_at': sub.submitted_at.strftime('%Y-%m-%d %H:%M:%S')
+    } for sub in submissions]
+
+    return jsonify({'submissions': submissions_data}), 200
+
+# @exercise_bp.route('/exercises/<int:exercise_id>/submit', methods=['POST'])
+# @jwt_required()
+# def submit_exercise(exercise_id):
+#     """Sinh viên nộp bài làm cho một bài tập và tự động chấm điểm nếu là CODE"""
+#     current_user_id = get_jwt_identity()
+#     user = User.query.get(current_user_id)
+#     exercise = Exercise.query.get(exercise_id)
+#     if not user or not exercise:
+#         return jsonify({'error': 'Người dùng hoặc bài tập không tồn tại'}), 404
+#     if user.role != UserRole.STUDENT:
+#         return jsonify({'error': 'Chỉ sinh viên mới được nộp bài'}), 403
+#     lesson = Lesson.query.get(exercise.lesson_id)
+#     course = Course.query.get(lesson.course_id)
+#     if course not in user.enrolled_courses:
+#         return jsonify({'error': 'Bạn chưa ghi danh vào khóa học này'}), 403
+#     data = request.get_json()
+#     content = data.get('content', '').strip()
+#     if not content:
+#         return jsonify({'error': 'Bài làm không được để trống'}), 400
+
+#     # Kiểm tra nếu đã nộp bài thì cập nhật, chưa thì tạo mới
+#     submission = Submission.query.filter_by(student_id=user.id, exercise_id=exercise_id).first()
+#     if submission:
+#         submission.content = content
+#         submission.status = 'SUBMITTED'
+#         submission.submitted_at = datetime.utcnow()
+#     else:
+#         submission = Submission(
+#             content=content,
+#             status='SUBMITTED',
+#             student_id=user.id,
+#             exercise_id=exercise_id
+#         )
+#         db.session.add(submission)
+#     db.session.commit()
+
+#     # --- TỰ ĐỘNG CHẤM ĐIỂM NẾU LÀ BÀI CODE ---
+#     if exercise.exercise_type == "CODE" or (hasattr(exercise.exercise_type, 'value') and exercise.exercise_type.value == "code"):
+#         test_cases = exercise.test_cases
+#         if not isinstance(test_cases, list):
+#             return jsonify({'error': 'Test cases không hợp lệ'}), 400
+
+#         passed = 0
+#         total = len(test_cases)
+#         feedbacks = []
+#         code = content
+
+#         for idx, case in enumerate(test_cases):
+#             input_data = case.get('input')
+#             expected_output = str(case.get('output')).strip()
+#             try:
+#                 f = io.StringIO()
+#                 with redirect_stdout(f):
+#                     exec(code, {'input_data': input_data})
+#                 output = f.getvalue().strip()
+#             except Exception as e:
+#                 feedbacks.append(f"Test case {idx+1}: Lỗi khi chạy code: {e}")
+#                 continue
+
+#             if output == expected_output:
+#                 passed += 1
+#             else:
+#                 feedbacks.append(
+#                     f"Test case {idx+1}: Sai. Input: {input_data}, Output của bạn: {output}, Kết quả đúng: {expected_output}"
+#                 )
+
+#         score = round(10 * passed / total, 2) if total > 0 else 0
+#         feedback = "\n".join(feedbacks) if feedbacks else "Tốt lắm! Đúng hết các test case."
+#         submission.score = score
+#         submission.feedback = feedback
+#         submission.status = 'GRADED'
+#         db.session.commit()
+#         # Ghi log nộp bài
+#         from ..models.user import UserLog
+#         log = UserLog(user_id=user.id, action='submit', detail=f'Nộp bài {exercise.id}')
+#         db.session.add(log)
+#         db.session.commit()
+#         return jsonify({
+#             'message': 'Nộp bài và chấm điểm tự động thành công',
+#             'submission_id': submission.id,
+#             'score': score,
+#             'feedback': feedback
+#         }), 200
+
+#     db.session.commit()
+#     # Ghi log nộp bài
+#     from ..models.user import UserLog
+#     log = UserLog(user_id=user.id, action='submit', detail=f'Nộp bài {exercise.id}')
+#     db.session.add(log)
+#     db.session.commit()
+#     return jsonify({'message': 'Nộp bài thành công', 'submission_id': submission.id}), 200
 
 @exercise_bp.route('/exercises/<int:exercise_id>/submit', methods=['POST'])
 @jwt_required()
 def submit_exercise(exercise_id):
-    """Sinh viên nộp bài làm cho một bài tập và tự động chấm điểm nếu là CODE"""
+    """Sinh viên nộp bài làm cho một bài tập (chỉ lưu bài làm, không chấm điểm)"""
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     exercise = Exercise.query.get(exercise_id)
+
     if not user or not exercise:
         return jsonify({'error': 'Người dùng hoặc bài tập không tồn tại'}), 404
+
     if user.role != UserRole.STUDENT:
         return jsonify({'error': 'Chỉ sinh viên mới được nộp bài'}), 403
-    lesson = Lesson.query.get(exercise.lesson_id)
-    course = Course.query.get(lesson.course_id)
-    if course not in user.enrolled_courses:
-        return jsonify({'error': 'Bạn chưa ghi danh vào khóa học này'}), 403
+
     data = request.get_json()
     content = data.get('content', '').strip()
     if not content:
@@ -168,64 +290,19 @@ def submit_exercise(exercise_id):
             exercise_id=exercise_id
         )
         db.session.add(submission)
-    db.session.commit()
-
-    # --- TỰ ĐỘNG CHẤM ĐIỂM NẾU LÀ BÀI CODE ---
-    if exercise.exercise_type == "CODE" or (hasattr(exercise.exercise_type, 'value') and exercise.exercise_type.value == "code"):
-        test_cases = exercise.test_cases
-        if not isinstance(test_cases, list):
-            return jsonify({'error': 'Test cases không hợp lệ'}), 400
-
-        passed = 0
-        total = len(test_cases)
-        feedbacks = []
-        code = content
-
-        for idx, case in enumerate(test_cases):
-            input_data = case.get('input')
-            expected_output = str(case.get('output')).strip()
-            try:
-                f = io.StringIO()
-                with redirect_stdout(f):
-                    exec(code, {'input_data': input_data})
-                output = f.getvalue().strip()
-            except Exception as e:
-                feedbacks.append(f"Test case {idx+1}: Lỗi khi chạy code: {e}")
-                continue
-
-            if output == expected_output:
-                passed += 1
-            else:
-                feedbacks.append(
-                    f"Test case {idx+1}: Sai. Input: {input_data}, Output của bạn: {output}, Kết quả đúng: {expected_output}"
-                )
-
-        score = round(10 * passed / total, 2) if total > 0 else 0
-        feedback = "\n".join(feedbacks) if feedbacks else "Tốt lắm! Đúng hết các test case."
-        submission.score = score
-        submission.feedback = feedback
-        submission.status = 'GRADED'
-        db.session.commit()
-        # Ghi log nộp bài
-        from ..models.user import UserLog
-        log = UserLog(user_id=user.id, action='submit', detail=f'Nộp bài {exercise.id}')
-        db.session.add(log)
-        db.session.commit()
-        return jsonify({
-            'message': 'Nộp bài và chấm điểm tự động thành công',
-            'submission_id': submission.id,
-            'score': score,
-            'feedback': feedback
-        }), 200
 
     db.session.commit()
+
     # Ghi log nộp bài
     from ..models.user import UserLog
     log = UserLog(user_id=user.id, action='submit', detail=f'Nộp bài {exercise.id}')
     db.session.add(log)
     db.session.commit()
-    return jsonify({'message': 'Nộp bài thành công', 'submission_id': submission.id}), 200
 
+    return jsonify({
+        'message': 'Nộp bài thành công',
+        'submission_id': submission.id
+    }), 200
 @exercise_bp.route('/lessons/<int:lesson_id>/exercises', methods=['GET'])
 @jwt_required()
 def get_exercises_for_lesson(lesson_id):

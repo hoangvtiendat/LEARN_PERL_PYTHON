@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager # Thêm dòng này
 from .core.config import Config
 from flask_mail import Mail
-
+from flask_cors import CORS
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -20,7 +20,7 @@ def check_if_token_in_blocklist(jwt_header, jwt_payload):
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
-
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
